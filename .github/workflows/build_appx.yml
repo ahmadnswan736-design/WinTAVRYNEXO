@@ -1,0 +1,30 @@
+name: Build WinTAVRYNEXO Native APPX
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Build Native Windows App
+      working-directory: WinTAVRYNEXO
+      run: |
+        dotnet publish -c Release -r win-x64 /p:GenerateAppxPackageOnBuild=true /p:AppxPackageDir="bin\Appx\"
+
+    - name: Upload Finished APPX Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: WinTAVRYNEXO_MicrosoftStore_Package
+        path: WinTAVRYNEXO/bin/Appx/

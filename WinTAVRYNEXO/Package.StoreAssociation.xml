@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<StoreAssociation xmlns="http://schemas.microsoft.com/appx/msix/storeassociation">
+  <ProductConfig>
+    <Identity Name="RadwanAlmsora.WinTAVRYNEXO"
+              Publisher="CN=DB86E487-92CC-4FB9-BDBC-F161416E3A4E" />
+    <Properties>
+      <DisplayName>WinTAVRYNEXO</DisplayName>
+      <PublisherDisplayName>Radwan Almsora</PublisherDisplayName>
+    </Properties>
+    <PackageFamilyName>RadwanAlmsora.WinTAVRYNEXO_ys76xt3sgtetj</PackageFamilyName>
+    <PackageSid>S-1-15-2-785265429-284155932-477822595-2959189494-991963545-78798544-3477932650</PackageSid>
+    <StoreId>9NTD5KLHN1X6</StoreId>
+  </ProductConfig>
+</StoreAssociation>
