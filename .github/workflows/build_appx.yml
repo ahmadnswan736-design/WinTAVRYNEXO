@@ -19,16 +19,13 @@ jobs:
         dotnet-version: '8.0.x'
 
     - name: Build and Publish WinTAVRYNEXO
-      shell: bash
+      shell: pwsh
       run: |
-        # البحث عن ملف المشروع أينما كان وتجميعه
-        PROJ_FILE=$(find . -name "*.csproj" | head -n 1)
-        echo "Found project: $PROJ_FILE"
-        dotnet publish "$PROJ_FILE" -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true -o ./build_output
+        dotnet publish WinTAVRYNEXO/WinTAVRYNEXO.csproj -c Release -r win-x64 --self-contained true -o ./publish
 
     - name: Upload WinTAVRYNEXO Package
       uses: actions/upload-artifact@v4
       with:
         name: WinTAVRYNEXO-Release-x64
-        path: ./build_output/
+        path: ./publish
         if-no-files-found: error
