@@ -1,9 +1,9 @@
-name: Build WinTAVRYNEXO Native APPX
+name: Build WinTAVRYNEXO Native App
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,18 +13,22 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Setup .NET
+    - name: Setup .NET 8
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
 
-    - name: Build Native Windows App
-      working-directory: WinTAVRYNEXO
+    - name: Build and Publish WinTAVRYNEXO
+      shell: bash
       run: |
-        dotnet publish -c Release -r win-x64 /p:GenerateAppxPackageOnBuild=true /p:AppxPackageDir="bin\Appx\"
+        # البحث عن ملف المشروع أينما كان وتجميعه
+        PROJ_FILE=$(find . -name "*.csproj" | head -n 1)
+        echo "Found project: $PROJ_FILE"
+        dotnet publish "$PROJ_FILE" -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true -o ./build_output
 
-    - name: Upload Finished APPX Package
+    - name: Upload WinTAVRYNEXO Package
       uses: actions/upload-artifact@v4
       with:
-        name: WinTAVRYNEXO_MicrosoftStore_Package
-        path: WinTAVRYNEXO/bin/Appx/
+        name: WinTAVRYNEXO-Release-x64
+        path: ./build_output/
+        if-no-files-found: error
