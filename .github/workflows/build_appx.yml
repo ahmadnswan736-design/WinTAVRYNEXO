@@ -1,4 +1,4 @@
-name: Build WinTAVRYNEXO Native App
+name: Build WinTAVRYNEXO Store APPX & MSIX
 
 on:
   push:
@@ -18,14 +18,62 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    - name: Build and Publish WinTAVRYNEXO
+    - name: Build, Publish and Pack APPX / MSIX
       shell: pwsh
       run: |
+        # 1. تجميع التطبيق الأصلي
+        Write-Host "1. Compiling WinTAVRYNEXO..."
         dotnet publish WinTAVRYNEXO/WinTAVRYNEXO.csproj -c Release -r win-x64 --self-contained true -o ./publish
 
-    - name: Upload WinTAVRYNEXO Package
+        # 2. تجهيز المانيفست الرسمي وتعديل التوافق
+        Write-Host "2. Preparing Manifest..."
+        (Get-Content WinTAVRYNEXO/Package.appxmanifest) -replace 'Language="x-generate"', 'Language="en-us"' | Set-Content ./publish/AppxManifest.xml
+        if (Test-Path WinTAVRYNEXO/Package.StoreAssociation.xml) {
+            Copy-Item WinTAVRYNEXO/Package.StoreAssociation.xml ./publish/ -Force
+        }
+
+        # 3. التأكد من وجود أيقونات وشعارات المتجر المطلوبة
+        Write-Host "3. Ensuring Store Assets..."
+        New-Item -ItemType Directory -Path ./publish/Assets -Force
+        if (Test-Path WinTAVRYNEXO/Assets) {
+            Copy-Item -Recurse WinTAVRYNEXO/Assets/* ./publish/Assets/ -Force
+        }
+        
+        Add-Type -AssemblyName System.Drawing
+        function Ensure-Png($path, $w, $h) {
+            if (-not (Test-Path $path)) {
+                $bmp = New-Object System.Drawing.Bitmap $w, $h
+                $g = [System.Drawing.Graphics]::FromImage($bmp)
+                $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(16, 20, 30))
+                $g.FillRectangle($brush, 0, 0, $w, $h)
+                $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+                $bmp.Dispose()
+            }
+        }
+        Ensure-Png "./publish/Assets/StoreLogo.png" 50 50
+        Ensure-Png "./publish/Assets/Square150x150Logo.png" 150 150
+        Ensure-Png "./publish/Assets/Square44x44Logo.png" 44 44
+        Ensure-Png "./publish/Assets/Wide310x150Logo.png" 310 150
+        Ensure-Png "./publish/Assets/SplashScreen.png" 620 300
+
+        # 4. استدعاء أداة MakeAppx الرسمية من Windows SDK
+        Write-Host "4. Packing Store APPX & MSIX Packages..."
+        $makeAppx = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Filter "MakeAppx.exe" -Recurse | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1).FullName
+        Write-Host "Using MakeAppx at: $makeAppx"
+
+        New-Item -ItemType Directory -Path ./store_package -Force
+
+        # توليد حزمة APPX المطلوبة
+        & $makeAppx pack /d ./publish /p ./store_package/WinTAVRYNEXO.appx /nv /v
+
+        # توليد حزمة MSIX أيضاً
+        & $makeAppx pack /d ./publish /p ./store_package/WinTAVRYNEXO.msix /nv /v
+
+        Write-Host "✅ Packages created successfully!"
+
+    - name: Upload Store Packages (APPX & MSIX)
       uses: actions/upload-artifact@v4
       with:
-        name: WinTAVRYNEXO-Release-x64
-        path: ./publish
+        name: WinTAVRYNEXO-Store-APPX
+        path: ./store_package/
         if-no-files-found: error
