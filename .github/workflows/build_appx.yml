@@ -24,7 +24,7 @@ jobs:
         run: |
           dotnet publish WinTAVRYNEXO/WinTAVRYNEXO.csproj -c Release -r win-x64 --self-contained false -o publish_output
 
-      - name: Prepare APPX Packaging Layout
+      - name: Prepare Clean APPX Packaging Layout
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path appx_layout
@@ -32,35 +32,38 @@ jobs:
           Copy-Item -Path WinTAVRYNEXO/Package.appxmanifest -Destination appx_layout/AppxManifest.xml -Force
           New-Item -ItemType Directory -Force -Path appx_layout/Assets
           Copy-Item -Path WinTAVRYNEXO/Assets/* -Destination appx_layout/Assets/ -Recurse -Force
-          Write-Host "APPX Layout Prepared Successfully!"
+          # إزالة ملف StoreAssociation حتى لا يظهر تحذير المتجر
+          Remove-Item -Path "appx_layout/Package.StoreAssociation.xml" -ErrorAction SilentlyContinue
+          Remove-Item -Path "appx_layout/*.pdb" -ErrorAction SilentlyContinue
+          Write-Host "APPX Layout Prepared Cleanly!"
 
       - name: Pack APPX with MakeAppx.exe
         shell: pwsh
         run: |
           $makeAppx = (Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\makeappx.exe" | Sort-Object FullName -Descending | Select-Object -First 1).FullName
           Write-Host "Using MakeAppx from: $makeAppx"
-          & $makeAppx pack /d appx_layout /p WinTAVRYNEXO_v1.0.1_Store.appx /o /nv
-          if (-not (Test-Path "WinTAVRYNEXO_v1.0.1_Store.appx")) {
+          & $makeAppx pack /d appx_layout /p WinTAVRYNEXO_v1.0.2_Store.appx /o /nv
+          if (-not (Test-Path "WinTAVRYNEXO_v1.0.2_Store.appx")) {
             throw "Failed to create APPX package!"
           }
-          Write-Host "APPX Package Built Successfully!"
+          Write-Host "APPX Package v1.0.2 Built Successfully!"
 
       - name: Upload Store Package Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: WinTAVRYNEXO_v1.0.1_Store_Package
-          path: WinTAVRYNEXO_v1.0.1_Store.appx
+          name: WinTAVRYNEXO_v1.0.2_Store_Package
+          path: WinTAVRYNEXO_v1.0.2_Store.appx
 
-      - name: Create GitHub Release v1.0.1
+      - name: Create GitHub Release v1.0.2
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.0.1
-          name: WinTAVRYNEXO v1.0.1 (Official Store Package)
+          tag_name: v1.0.2
+          name: WinTAVRYNEXO v1.0.2 (Store Certified)
           body: |
-            ## WinTAVRYNEXO v1.0.1 Store Certified Release
-            - Native C# .NET 8 x64 Architecture
-            - Official High-Resolution Store Icons Included
-            - Zero Default Assets (100% Policy 10.1.1 Compliant)
-            - Package: `RadwanAlmsora.WinTAVRYNEXO`
-          files: WinTAVRYNEXO_v1.0.1_Store.appx
+            ## WinTAVRYNEXO v1.0.2 Store Package
+            - Fixed Language Resource tags (en-US, ar)
+            - Cleaned StoreAssociation from layout
+            - Package Identity: RadwanAlmsora.WinTAVRYNEXO
+            - Architecture: x64
+          files: WinTAVRYNEXO_v1.0.2_Store.appx

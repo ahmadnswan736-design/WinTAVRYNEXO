@@ -7,7 +7,7 @@
   <Identity Name="RadwanAlmsora.WinTAVRYNEXO"
             ProcessorArchitecture="x64"
             Publisher="CN=DB86E487-92CC-4FB9-BDBC-F161416E3A4E"
-            Version="1.0.1.0" />
+            Version="1.0.2.0" />
 
   <Properties>
     <DisplayName>WinTAVRYNEXO</DisplayName>
@@ -21,7 +21,8 @@
   </Dependencies>
 
   <Resources>
-    <Resource Language="x-generate" />
+    <Resource Language="en-US" />
+    <Resource Language="ar" />
   </Resources>
 
   <Applications>
