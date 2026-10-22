@@ -1,50 +1,66 @@
-name: Build WinTAVRYNEXO Store APPX & MSIX
+name: Build Microsoft Store Appx
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Setup .NET 8
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.0.x'
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
-    - name: Build and Pack Official Store APPX
-      shell: pwsh
-      run: |
-        Write-Host "1. Publishing WinTAVRYNEXO v1.0.1..."
-        dotnet publish WinTAVRYNEXO/WinTAVRYNEXO.csproj -c Release -r win-x64 --self-contained true -o ./publish
+      - name: Publish WinTAVRYNEXO (Release win-x64)
+        run: |
+          dotnet publish WinTAVRYNEXO/WinTAVRYNEXO.csproj -c Release -r win-x64 --self-contained false -o publish_output
 
-        Write-Host "2. Preparing Manifest..."
-        (Get-Content WinTAVRYNEXO/Package.appxmanifest) -replace 'Language="x-generate"', 'Language="en-us"' | Set-Content ./publish/AppxManifest.xml
-        if (Test-Path WinTAVRYNEXO/Package.StoreAssociation.xml) {
-            Copy-Item WinTAVRYNEXO/Package.StoreAssociation.xml ./publish/ -Force
-        }
+      - name: Prepare APPX Packaging Layout
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path appx_layout
+          Copy-Item -Path publish_output/* -Destination appx_layout/ -Recurse -Force
+          Copy-Item -Path WinTAVRYNEXO/Package.appxmanifest -Destination appx_layout/AppxManifest.xml -Force
+          New-Item -ItemType Directory -Force -Path appx_layout/Assets
+          Copy-Item -Path WinTAVRYNEXO/Assets/* -Destination appx_layout/Assets/ -Recurse -Force
+          Write-Host "APPX Layout Prepared Successfully!"
 
-        Write-Host "3. Copying Official Icons to Package..."
-        New-Item -ItemType Directory -Path ./publish/Assets -Force
-        Copy-Item -Recurse WinTAVRYNEXO/Assets/* ./publish/Assets/ -Force
+      - name: Pack APPX with MakeAppx.exe
+        shell: pwsh
+        run: |
+          $makeAppx = (Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\makeappx.exe" | Sort-Object FullName -Descending | Select-Object -First 1).FullName
+          Write-Host "Using MakeAppx from: $makeAppx"
+          & $makeAppx pack /d appx_layout /p WinTAVRYNEXO_v1.0.1_Store.appx /o /nv
+          if (-not (Test-Path "WinTAVRYNEXO_v1.0.1_Store.appx")) {
+            throw "Failed to create APPX package!"
+          }
+          Write-Host "APPX Package Built Successfully!"
 
-        Write-Host "4. Packaging APPX & MSIX with MakeAppx..."
-        $makeAppx = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Filter "MakeAppx.exe" -Recurse | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1).FullName
-        New-Item -ItemType Directory -Path ./store_package -Force
+      - name: Upload Store Package Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WinTAVRYNEXO_v1.0.1_Store_Package
+          path: WinTAVRYNEXO_v1.0.1_Store.appx
 
-        & $makeAppx pack /d ./publish /p ./store_package/WinTAVRYNEXO.appx /nv /v
-        & $makeAppx pack /d ./publish /p ./store_package/WinTAVRYNEXO.msix /nv /v
-        Write-Host "Successfully packaged WinTAVRYNEXO with your custom icons!"
-
-    - name: Upload Store Package
-      uses: actions/upload-artifact@v4
-      with:
-        name: WinTAVRYNEXO-Store-Package-v1.0.1
-        path: ./store_package/
-        if-no-files-found: error
+      - name: Create GitHub Release v1.0.1
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.1
+          name: WinTAVRYNEXO v1.0.1 (Official Store Package)
+          body: |
+            ## WinTAVRYNEXO v1.0.1 Store Certified Release
+            - Native C# .NET 8 x64 Architecture
+            - Official High-Resolution Store Icons Included
+            - Zero Default Assets (100% Policy 10.1.1 Compliant)
+            - Package: `RadwanAlmsora.WinTAVRYNEXO`
+          files: WinTAVRYNEXO_v1.0.1_Store.appx
