@@ -9,9 +9,9 @@
     <AssemblyName>WinTAVRYNEXO</AssemblyName>
     <RootNamespace>WinTAVRYNEXO</RootNamespace>
     
-    <Version>1.0.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.0.1.0</Version>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
     <Company>Radwan Almsora</Company>
     <Authors>Radwan Almsora</Authors>
     <Product>WinTAVRYNEXO - Windows 10 &amp; 11 System Optimizer &amp; Care</Product>

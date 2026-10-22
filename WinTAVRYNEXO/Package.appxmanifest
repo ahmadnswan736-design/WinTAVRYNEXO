@@ -7,7 +7,7 @@
   <Identity Name="RadwanAlmsora.WinTAVRYNEXO"
             ProcessorArchitecture="x64"
             Publisher="CN=DB86E487-92CC-4FB9-BDBC-F161416E3A4E"
-            Version="1.0.0.0" />
+            Version="1.0.1.0" />
 
   <Properties>
     <DisplayName>WinTAVRYNEXO</DisplayName>
